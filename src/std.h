@@ -20,6 +20,7 @@
 #pragma once
 
 #define _POSIX_C_SOURCE 199309L /* try removing this if build fails */
+#define _DEFAULT_SOURCE 1 /* for usleep() */
 
 #include <stdbool.h>
 #include <stddef.h>

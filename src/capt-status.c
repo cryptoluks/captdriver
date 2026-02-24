@@ -121,18 +121,30 @@ const struct capt_status_s *capt_get_xstatus(void)
 
 void capt_wait_ready(void)
 {
-	while (FLAG(capt_get_status(), CAPT_FL_BUSY))
-		sleep(1);
+	unsigned delay = CAPT_POLL_MIN_US;
+	while (FLAG(capt_get_status(), CAPT_FL_BUSY)) {
+		usleep(delay);
+		if (delay < CAPT_POLL_MAX_US)
+			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
+	}
 }
 
 void capt_wait_xready(void)
 {
-	while (FLAG(capt_get_xstatus(), CAPT_FL_BUSY))
-		sleep(1);
+	unsigned delay = CAPT_POLL_MIN_US;
+	while (FLAG(capt_get_xstatus(), CAPT_FL_BUSY)) {
+		usleep(delay);
+		if (delay < CAPT_POLL_MAX_US)
+			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
+	}
 }
 
 void capt_wait_xready_only(void)
 {
-       while (FLAG(capt_get_xstatus_only(), CAPT_FL_BUSY))
-               sleep(1);
+	unsigned delay = CAPT_POLL_MIN_US;
+	while (FLAG(capt_get_xstatus_only(), CAPT_FL_BUSY)) {
+		usleep(delay);
+		if (delay < CAPT_POLL_MAX_US)
+			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
+	}
 }

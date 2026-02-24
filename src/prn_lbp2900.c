@@ -128,7 +128,7 @@ static void lbp2900_job_prologue(struct printer_state_s *state)
 	size_t size;
 
 	capt_sendrecv(CAPT_IDENT, NULL, 0, NULL, 0);
-	sleep(1);
+	usleep(200000);
 	capt_init_status();
 	lbp2900_get_status(state->ops);
 
@@ -150,7 +150,7 @@ static void lbp3000_job_prologue(struct printer_state_s *state)
 	size_t size;
 
 	capt_sendrecv(CAPT_IDENT, NULL, 0, NULL, 0);
-	sleep(1);
+	usleep(200000);
 	capt_init_status();
 	lbp2900_get_status(state->ops);
 
@@ -178,7 +178,7 @@ static void lbp3010_job_prologue(struct printer_state_s *state)
 	size_t size;
 
 	capt_sendrecv(CAPT_IDENT, NULL, 0, NULL, 0);
-	sleep(1);
+	usleep(200000);
 	capt_init_status();
 	lbp2900_get_status(state->ops);
 
@@ -200,7 +200,7 @@ static void lbp6000_job_prologue(struct printer_state_s *state)
 	size_t size;
 
 	capt_sendrecv(CAPT_IDENT, NULL, 0, NULL, 0);
-	sleep(1);
+	usleep(200000);
 	capt_init_status();
 	lbp2900_get_status(state->ops);
 
@@ -224,7 +224,7 @@ static bool lbp2900_page_prologue(struct printer_state_s *state, const struct pa
 	size_t s;
 	uint8_t buf[16];
 
-	uint8_t sz = 0x00; /* page size */
+	uint8_t sz = dims->paper_size_code;
 	uint8_t save = dims->toner_save;
 	uint8_t ink_k = (dims->ink_k<<2);
 	uint8_t fm = 0x00; /* fuser mode (temperature?) */
@@ -259,22 +259,8 @@ static bool lbp2900_page_prologue(struct printer_state_s *state, const struct pa
 		default:
 			fm = 0x01;
 	}
-	fprintf(stderr, "DEBUG: CAPT: media_type=%u, fm=%u\n", dims->media_type, fm);
-
-	if ( strncmp(dims->media_size, "A4", 2) == 0 ) sz = 0x02;
-	else if ( strncmp(dims->media_size, "A5", 2) == 0 ) sz = 0x03;
-	else if ( strncmp(dims->media_size, "B5", 2) == 0 ) sz = 0x07;
-	else if ( strncmp(dims->media_size, "Executive", 9) == 0 ) sz = 0x0A;
-	else if ( strncmp(dims->media_size, "Legal", 5) == 0 ) sz = 0x0C;
-	else if ( strncmp(dims->media_size, "Letter", 6) ==0 ) sz = 0x0D;
-	else if ( strncmp(dims->media_size, "EnvC5", 5) ==0 ) sz = 0x15;
-	else if ( strncmp(dims->media_size, "Env10", 5) == 0 ) sz = 0x16;
-	else if ( strncmp(dims->media_size, "EnvMonarch", 10) == 0 ) sz = 0x17;
-	else if ( strncmp(dims->media_size, "EnvDL", 5) == 0 ) sz = 0x18;
-	else if ( strncmp(dims->media_size, "3x5", 3) ==0 ) sz = 0x40;
-	else if ( strncmp(dims->media_size, "PRC16K", 6) ==0 ) sz = 0xD4;
-	else sz = 0x02;
-	fprintf(stderr, "DEBUG: CAPT: media_size=%s, fm=%u\n", dims->media_size, sz);
+	fprintf(stderr, "DEBUG: CAPT: media_type=%u, fm=%u, paper_size=0x%02x\n",
+			dims->media_type, fm, sz);
 
 	uint8_t pageparms[] = {
 		/* Bytes 0-21 (0x00 to 0x15) */
@@ -310,10 +296,13 @@ static bool lbp2900_page_prologue(struct printer_state_s *state, const struct pa
 		lbp2900_wait_ready(state->ops);
 	}
 
-	while (1) {
-		if (! FLAG(lbp2900_get_status(state->ops), CAPT_FL_BUFFERFULL))
-			break;
-		sleep(1);
+	{
+		unsigned delay = CAPT_POLL_MIN_US;
+		while (FLAG(lbp2900_get_status(state->ops), CAPT_FL_BUFFERFULL)) {
+			usleep(delay);
+			if (delay < CAPT_POLL_MAX_US)
+				delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
+		}
 	}
 
 	capt_multi_begin(CAPT_SET_PARMS);
@@ -332,14 +321,19 @@ static bool lbp2900_page_epilogue(struct printer_state_s *state, const struct pa
 	(void) dims;
 	const struct capt_status_s *status;
 
+	unsigned delay;
+
 	capt_send(CAPT_PRINT_DATA_END, NULL, 0);
 
 	/* waiting until the page is received */
+	delay = CAPT_POLL_MIN_US;
 	while (1) {
-	  sleep(1);
-	  status = lbp2900_get_status(state->ops);
-	  if (status->page_received == status->page_decoding)
-	    break;
+		status = lbp2900_get_status(state->ops);
+		if (status->page_received == status->page_decoding)
+			break;
+		usleep(delay);
+		if (delay < CAPT_POLL_MAX_US)
+			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
 	}
 	send_job_start(2, status->page_decoding);
 	lbp2900_wait_ready(state->ops);
@@ -350,32 +344,44 @@ static bool lbp2900_page_epilogue(struct printer_state_s *state, const struct pa
 
 	send_job_start(6, status->page_decoding);
 
-	while (1) {
-		const struct capt_status_s *status = lbp2900_get_status(state->ops);
-		/* Interesting. Using page_printing here results in shifted print */
-		if (status->page_out == status->page_decoding)
-			return true;
-		if (FLAG(status, CAPT_FL_NOPAPER2) || FLAG(status, CAPT_FL_NOPAPER1)) {
-			fprintf(stderr, "DEBUG: CAPT: no paper\n");
-			if (FLAG(status, CAPT_FL_PRINTING) || FLAG(status, CAPT_FL_PROCESSING1))
-				continue;
-			return false;
+	/*
+	 * Don't wait for the page to physically exit the printer.
+	 * The page_prologue buffer-full check and the job_epilogue
+	 * page_completed check handle flow control. This allows
+	 * overlapping page printing with next page compression/transfer
+	 * for significant multi-page speedup.
+	 *
+	 * We do a quick check for paper-out errors before returning.
+	 */
+	{
+		const struct capt_status_s *st = lbp2900_get_status(state->ops);
+		if (FLAG(st, CAPT_FL_NOPAPER2) || FLAG(st, CAPT_FL_NOPAPER1)) {
+			if (!FLAG(st, CAPT_FL_PRINTING) && !FLAG(st, CAPT_FL_PROCESSING1)) {
+				fprintf(stderr, "DEBUG: CAPT: no paper\n");
+				return false;
+			}
 		}
-		sleep(1);
 	}
+
+	return true;
 }
 
 static void lbp2900_job_epilogue(struct printer_state_s *state)
 {
 	uint8_t jbuf[2] = { LO(job), HI(job) };
 
-	while (1) {
-		const struct capt_status_s *status = lbp2900_get_status(state->ops);
-		if (status->page_completed == status->page_decoding) {
-			send_job_start(4, status->page_completed);
-			break;
+	{
+		unsigned delay = CAPT_POLL_MIN_US;
+		while (1) {
+			const struct capt_status_s *status = lbp2900_get_status(state->ops);
+			if (status->page_completed == status->page_decoding) {
+				send_job_start(4, status->page_completed);
+				break;
+			}
+			usleep(delay);
+			if (delay < CAPT_POLL_MAX_US)
+				delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
 		}
-		sleep(1);
 	}
 	capt_sendrecv(CAPT_JOB_END, jbuf, 2, NULL, 0);
 }
@@ -409,7 +415,6 @@ static void lbp2900_cancel_cleanup(struct printer_state_s *state)
 static void lbp3010_cancel_cleanup(struct printer_state_s *state)
 {
 	(void) state;
-	(void) state;
 	const struct capt_status_s *status = lbp2900_get_status(state->ops);
 	uint8_t jbuf[2] = { LO(job), HI(job) };
 
@@ -434,7 +439,7 @@ static void lbp2900_wait_user(struct printer_state_s *state)
 			fprintf(stderr, "DEBUG: CAPT: button pressed\n");
 			break;
 		}
-		sleep(1);
+		usleep(200000);
 	}
 
 	capt_sendrecv(CAPT_GPIO, lbp2900_gpio_init, ARRAY_SIZE(lbp2900_gpio_init), NULL, 0);
@@ -457,7 +462,7 @@ static void lbp3010_wait_user(struct printer_state_s *state)
 			fprintf(stderr, "DEBUG: CAPT: (virtual) button pressed\n");
 			break;
 		}
-		sleep(1);
+		usleep(200000);
 	}
 
 	capt_sendrecv(CAPT_GPIO, lbp3010_gpio_init, ARRAY_SIZE(lbp3010_gpio_init), NULL, 0);

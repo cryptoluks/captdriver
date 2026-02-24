@@ -27,7 +27,7 @@ struct page_dims_s {
 	/* set by CUPS */
 	unsigned media_type;
 	unsigned media_adapt;
-	char media_size[0x40];
+	uint8_t paper_size_code;
 	unsigned paper_width;
 	unsigned paper_height;
 	unsigned toner_save;
@@ -35,7 +35,7 @@ struct page_dims_s {
 	unsigned ink_k;
 	unsigned margin_height;
 	unsigned margin_width;
-	/* set by printer ops */
+	/* set by page_set_dims from PPD/CUPS data */
 	unsigned line_size;
 	unsigned band_size;
 	unsigned num_lines;

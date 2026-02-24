@@ -173,7 +173,11 @@ static void compress_page_data(struct printer_state_s *state,
 			}
 			memcpy(bandbuf + iline * dims->line_size + shiftb, linebuf + shiftl, csize);
 		}
-		size = state->ops->compress_band(state, compbuf, compsize, bandbuf, dims->line_size, nlines);
+		{
+		bool is_last = (start + nlines) >= dims->num_lines;
+		size = state->ops->compress_band(state, compbuf, compsize,
+				bandbuf, dims->line_size, nlines, is_last);
+		}
 		new_band = calloc(1, sizeof_struct_band_list_s(size));
 		if (! new_band)
 			abort();
@@ -340,7 +344,7 @@ static void do_print(int fd)
 int main(int argc, char *argv[])
 {
 
-#if POSIX_C_SOURCE >= 199309L
+#if _POSIX_C_SOURCE >= 199309L
 	struct sigaction act_ign;
 	struct sigaction act_cancel;
 
@@ -349,7 +353,7 @@ int main(int argc, char *argv[])
 	sigemptyset(&act_ign.sa_mask);
 	sigaction(SIGPIPE, &act_ign, NULL);
 	/* handle SIGTERM */
-	act_cancel.sa_handler = do_cancel();
+	act_cancel.sa_handler = do_cancel;
 	sigemptyset(&act_cancel.sa_mask);
 	sigaddset(&act_cancel.sa_mask, SIGINT);
 	sigaction(SIGTERM, &act_cancel, NULL);
