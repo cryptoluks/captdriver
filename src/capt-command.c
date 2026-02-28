@@ -24,12 +24,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <cups/cups.h>
 #include <cups/sidechannel.h>
 
 static uint8_t capt_iobuf[0x10000];
-static size_t  capt_iosize;
+static size_t capt_iosize;
 
 static void capt_debug_buf(const char *level, size_t size)
 {
@@ -51,15 +52,13 @@ static void capt_send_buf(void)
 	const uint8_t *iopos = capt_iobuf;
 	size_t iosize = capt_iosize;
 
-	if (debug) {
-		fprintf(stderr, "DEBUG: CAPT: send ");
-		capt_debug_buf("DEBUG", 128);
-	}
+	fprintf(stderr, "DEBUG: CAPT: send ");
+	capt_debug_buf("DEBUG", 128);
 
 	while (iosize) {
 		cups_sc_status_t status;
-		uint8_t tmpbuf[128];
-		size_t tmpsize = sizeof(tmpbuf);
+		char tmpbuf[128];
+		int tmpsize = sizeof(tmpbuf);
 		size_t sendsize = iosize;
 		if (sendsize > 4096)
 			sendsize = 4096;
@@ -70,7 +69,7 @@ static void capt_send_buf(void)
 		fflush(stdout);
 
 		status = cupsSideChannelDoRequest(CUPS_SC_CMD_DRAIN_OUTPUT,
-				(char *) tmpbuf, (int *) &tmpsize, 1.0);
+				tmpbuf, &tmpsize, 1.0);
 		if (status != CUPS_SC_STATUS_OK) {
 			if (status == CUPS_SC_STATUS_TIMEOUT) {
 				/* Overcome race conditions in usb backend */
@@ -102,20 +101,26 @@ static void capt_recv_buf(size_t offset, size_t expected)
 
 const char *capt_identify(void)
 {
+	unsigned delay = 10000; /* 10ms */
+
 	while (1) {
 		cups_sc_status_t status;
-		capt_iosize = sizeof(capt_iobuf) - 1;
+		int idsize = sizeof(capt_iobuf) - 1;
 		status = cupsSideChannelDoRequest(CUPS_SC_CMD_GET_DEVICE_ID,
-				(char *) capt_iobuf, (int *) &capt_iosize, 60.0);
+				(char *) capt_iobuf, &idsize, 60.0);
+		capt_iosize = idsize > 0 ? idsize : 0;
 		if (status != CUPS_SC_STATUS_OK) {
 			fprintf(stderr, "ERROR: CAPT: unable to communicate with printer\n");
 			exit(1);
 		}
 		capt_iobuf[capt_iosize] = '\0';
-		fprintf(stderr, "DEBUG: CAPT: printer ID string %s\n", capt_iobuf);
-		if (capt_iosize)
-			return (const char*) capt_iobuf;
-		sleep(1);
+		if (capt_iosize) {
+			fprintf(stderr, "DEBUG: CAPT: printer ID: %s\n", capt_iobuf);
+			return (const char *) capt_iobuf;
+		}
+		usleep(delay);
+		if (delay < 500000)
+			delay = delay * 2 < 500000 ? delay * 2 : 500000;
 	}
 }
 
@@ -170,18 +175,17 @@ void capt_sendrecv(uint16_t cmd, const void *buf, size_t size, void *reply, size
 		capt_debug_buf("ERROR", capt_iosize);
 		exit(1);
 	}
-	if (debug) {
-		fprintf(stderr, "DEBUG: CAPT: recv ");
-		capt_debug_buf("DEBUG", capt_iosize);
-	}
+	fprintf(stderr, "DEBUG: CAPT: recv ");
+	capt_debug_buf("DEBUG", capt_iosize);
 	if (reply) {
-		size_t copysize = reply_size ? *reply_size : capt_iosize;
-		if (copysize > capt_iosize)
-			copysize = capt_iosize;
+		size_t payload = capt_iosize > 4 ? capt_iosize - 4 : 0;
+		size_t copysize = reply_size ? *reply_size : payload;
+		if (copysize > payload)
+			copysize = payload;
 		memcpy(reply, capt_iobuf + 4, copysize);
 	}
 	if (reply_size)
-		*reply_size = capt_iosize;
+		*reply_size = capt_iosize > 4 ? capt_iosize - 4 : 0;
 }
 
 void capt_multi_begin(uint16_t cmd)
@@ -202,4 +206,3 @@ void capt_multi_send(void)
 	capt_iobuf[3] = HI(capt_iosize);
 	capt_send_buf();
 }
-

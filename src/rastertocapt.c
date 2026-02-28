@@ -25,15 +25,10 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
+#include <unistd.h>
 #include <cups/raster.h>
-
-
-struct cached_page_s {
-	struct page_dims_s dims;
-	struct band_list_s *bands;
-};
 
 struct band_list_s {
 	struct band_list_s *next;
@@ -41,19 +36,19 @@ struct band_list_s {
 	uint8_t data[];
 };
 
-/* printer and job state */
-const struct printer_ops_s *ops;
-struct printer_state_s *state = NULL;
-struct cached_page_s *cached_page = NULL;
-cups_raster_t *raster;
+struct cached_page_s {
+	struct page_dims_s dims;
+	struct band_list_s *bands;
+};
 
-/* compressor state */
-uint8_t *linebuf = NULL;
-uint8_t *bandbuf = NULL;
-uint8_t *compbuf = NULL;
+static const struct printer_ops_s *ops;
+static struct printer_state_s *state;
+static struct cached_page_s *cached_page;
+static cups_raster_t *raster;
 
-static inline size_t sizeof_struct_band_list_s(size_t size)
-	{ return sizeof(struct band_list_s) + size; }
+static uint8_t *linebuf;
+static uint8_t *bandbuf;
+static uint8_t *compbuf;
 
 static size_t center_pixels(size_t small, size_t large, unsigned bpp)
 {
@@ -68,14 +63,14 @@ static size_t center_pixels(size_t small, size_t large, unsigned bpp)
 	return bypp * ((large_p - small_p) / 2);
 }
 
-static void free_cached_page(struct cached_page_s *cached_page)
+static void free_cached_page(struct cached_page_s *page)
 {
-	while (cached_page->bands) {
-		void *p = cached_page->bands;
-		cached_page->bands = cached_page->bands->next;
+	while (page->bands) {
+		void *p = page->bands;
+		page->bands = page->bands->next;
 		free(p);
 	}
-	free(cached_page);
+	free(page);
 }
 
 static void free_state(void)
@@ -120,7 +115,6 @@ static void compress_page_data(struct printer_state_s *state,
 	unsigned shiftb = 0;
 	unsigned shiftl = 0;
 	unsigned csize = header->cupsBytesPerLine;
-
 
 	if (header->cupsBytesPerLine < dims->line_size) {
 		csize = header->cupsBytesPerLine;
@@ -173,8 +167,12 @@ static void compress_page_data(struct printer_state_s *state,
 			}
 			memcpy(bandbuf + iline * dims->line_size + shiftb, linebuf + shiftl, csize);
 		}
-		size = state->ops->compress_band(state, compbuf, compsize, bandbuf, dims->line_size, nlines);
-		new_band = calloc(1, sizeof_struct_band_list_s(size));
+		{
+		bool is_last = (start + nlines) >= dims->num_lines;
+		size = state->ops->compress_band(state, compbuf, compsize,
+				bandbuf, dims->line_size, nlines, is_last);
+		}
+		new_band = calloc(1, sizeof(struct band_list_s) + size);
 		if (! new_band)
 			abort();
 		new_band->size = size;
@@ -243,51 +241,47 @@ static void do_print(int fd)
 	state->ipage = 0;
 
 	raster = cupsRasterOpen(fd, CUPS_RASTER_READ);
+	if (! raster) {
+		fprintf(stderr, "ERROR: CAPT: unable to open raster stream\n");
+		free_state();
+		return;
+	}
 
-	fprintf(stderr, "DEBUG: CAPT: rastertocapt is rendering\n");
+	fprintf(stderr, "DEBUG: CAPT: rendering\n");
 
 	while (1) {
-		bool page_printed = false;
-
 		if (! cached_page) {
 			struct cups_page_header2_s header;
 
 			if (! cupsRasterReadHeader2(raster, &header))
-				break; /* no more pages */
+				break;
 
 			cached_page = calloc(1, sizeof(struct cached_page_s));
 			if (! cached_page)
 				abort();
 
 			state->ipage += 1;
-
 			page_set_dims(&cached_page->dims, &header);
-
-			ops->page_setup(state, &cached_page->dims,
-					header.cupsWidth, header.cupsHeight);
-
 			compress_page_data(state, cached_page, raster, &header);
 		}
 
 		if (! in_job) {
-			fprintf(stderr, "DEBUG: CAPT: rastertocapt: start job\n");
+			fprintf(stderr, "DEBUG: CAPT: start job\n");
 			if (ops->job_prologue)
 				ops->job_prologue(state);
 			in_job = true;
 		}
 
-		fprintf(stderr, "DEBUG: CAPT: rastertocapt: start page %u\n", state->ipage);
+		fprintf(stderr, "DEBUG: CAPT: start page %u\n", state->ipage);
 		if (ops->page_prologue) {
 			if (cached_page->dims.manual_duplex && state->ipage > 1) {
-				fprintf(stderr, "DEBUG: CAPT: rastertocapt: manual duplex: press button to continue\n");
+				fprintf(stderr, "DEBUG: CAPT: manual duplex: press button\n");
 				ops->wait_user(state);
 			}
-			bool ok = ops->page_prologue(state, &cached_page->dims);
-			if (! ok) {
-				fprintf(stderr, "DEBUG: CAPT: rastertocapt: can't start page\n");
+			if (! ops->page_prologue(state, &cached_page->dims)) {
+				fprintf(stderr, "DEBUG: CAPT: can't start page\n");
 				ops->wait_user(state);
 				if (in_job) {
-					fprintf(stderr, "DEBUG: CAPT: rastertocapt: retry job\n");
 					if (ops->job_epilogue)
 						ops->job_epilogue(state);
 					in_job = false;
@@ -296,37 +290,25 @@ static void do_print(int fd)
 			}
 		}
 
-		fprintf(stderr, "DEBUG: CAPT: rastertocapt: sending page data\n");
 		send_page_data(state, cached_page);
 
-		fprintf(stderr, "DEBUG: CAPT: rastertocapt: end page %u\n", state->ipage);
+		fprintf(stderr, "DEBUG: CAPT: end page %u\n", state->ipage);
 		if (ops->page_epilogue) {
-			bool ok = ops->page_epilogue(state, &cached_page->dims);
-			if (! ok) {
-				fprintf(stderr, "DEBUG: CAPT: rastertocapt: page not printed\n");
+			if (! ops->page_epilogue(state, &cached_page->dims)) {
+				fprintf(stderr, "DEBUG: CAPT: page not printed\n");
 				ops->wait_user(state);
 				continue;
 			}
 		}
 
-		page_printed = true;
-
-		if (page_printed) {
-			while (cached_page->bands) {
-				void *p = cached_page->bands;
-				cached_page->bands = cached_page->bands->next;
-				free(p);
-			}
-			free(cached_page);
-			cached_page = NULL;
-		}
+		free_cached_page(cached_page);
+		cached_page = NULL;
 	}
 
 	if (in_job) {
-		fprintf(stderr, "DEBUG: CAPT: rastertocapt: end job\n");
+		fprintf(stderr, "DEBUG: CAPT: end job\n");
 		if (ops->job_epilogue)
 			ops->job_epilogue(state);
-		in_job = false;
 	}
 
 	if (! state->ipage)
@@ -336,29 +318,27 @@ static void do_print(int fd)
 	free_state();
 }
 
-
 int main(int argc, char *argv[])
 {
+	int fd = 0;
 
-#if POSIX_C_SOURCE >= 199309L
-	struct sigaction act_ign;
-	struct sigaction act_cancel;
+#if _POSIX_C_SOURCE >= 199309L
+	{
+		struct sigaction act;
 
-	/* ignore SIGPIPE */
-	act_ign.sa_handler = SIG_IGN;
-	sigemptyset(&act_ign.sa_mask);
-	sigaction(SIGPIPE, &act_ign, NULL);
-	/* handle SIGTERM */
-	act_cancel.sa_handler = do_cancel();
-	sigemptyset(&act_cancel.sa_mask);
-	sigaddset(&act_cancel.sa_mask, SIGINT);
-	sigaction(SIGTERM, &act_cancel, NULL);
+		memset(&act, 0, sizeof(act));
+		act.sa_handler = SIG_IGN;
+		sigaction(SIGPIPE, &act, NULL);
+
+		act.sa_handler = do_cancel;
+		sigemptyset(&act.sa_mask);
+		sigaddset(&act.sa_mask, SIGINT);
+		sigaction(SIGTERM, &act, NULL);
+	}
 #else
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, do_cancel);
 #endif
-
-	int fd = 0;
 
 	if (argc < 6 || argc > 7) {
 		fprintf(stderr, "Usage: %s job-id user title copies options [file]\n", argv[0]);
@@ -373,9 +353,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	fprintf(stderr, "DEBUG: CAPT: rastertocapt started\n");
+	fprintf(stderr, "DEBUG: CAPT: started\n");
 	do_print(fd);
-	fprintf(stderr, "DEBUG: CAPT: rastertocapt finished\n");
+	fprintf(stderr, "DEBUG: CAPT: finished\n");
 
 	if (argc == 7)
 		close(fd);

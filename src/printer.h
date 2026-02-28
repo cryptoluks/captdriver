@@ -43,21 +43,18 @@ struct printer_ops_s {
 	void (*free_state) (struct printer_state_s *state);
 	void (*job_prologue) (struct printer_state_s *state);
 	void (*job_epilogue) (struct printer_state_s *state);
-	void (*page_setup) (struct printer_state_s *state,
-		struct page_dims_s *dims, unsigned width, unsigned height);
 	bool (*page_prologue) (struct printer_state_s *state, const struct page_dims_s *dims);
 	bool (*page_epilogue) (struct printer_state_s *state, const struct page_dims_s *dims);
 	size_t (*compress_band) (struct printer_state_s *state,
 		void *band, size_t size,
-		const void *pixels, unsigned line_size, unsigned num_lines);
+		const void *pixels, unsigned line_size, unsigned num_lines,
+		bool is_last_band);
 	void (*send_band) (struct printer_state_s *state, const void *band, size_t size);
 	void (*cancel_cleanup) (struct printer_state_s *state);
 	void (*wait_user) (struct printer_state_s *state);
 };
 
 const struct printer_ops_s *printer_detect(void);
-
-void cancel_job(int sig);
 
 void __printer_register_ops(const char *name, const struct printer_ops_s *ops,
 		enum printer_support status);

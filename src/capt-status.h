@@ -32,8 +32,7 @@ struct capt_status_s {
 };
 
 #define _FL(s, b) ((s << 16) | (1 << b))
-enum capt_flags
-{
+enum capt_flags {
 	/* status[0] */
 	CAPT_FL_READY1       = _FL(0, 15), /* ? */
 	CAPT_FL_READY2       = _FL(0, 12), /* ? */
@@ -65,8 +64,13 @@ enum capt_flags
 
 static inline bool FLAG(const struct capt_status_s *status, enum capt_flags flag)
 {
-	return !! (status->status[flag >> 16] & (flag & 0xFFFF));
+	return !!(status->status[flag >> 16] & (flag & 0xFFFF));
 }
+
+/* Adaptive polling parameters (microseconds) */
+#define CAPT_POLL_MIN_US      10000   /* 10ms initial poll interval */
+#define CAPT_POLL_MAX_US     500000   /* 500ms maximum poll interval */
+#define CAPT_POLL_MAX_RETRIES    600   /* ~5 minutes at max interval */
 
 void capt_init_status(void);
 const struct capt_status_s *capt_get_status(void);

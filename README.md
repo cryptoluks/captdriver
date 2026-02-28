@@ -1,24 +1,80 @@
-# captdriver - alternative driver for Canon CAPT printers
+# captdriver
 
-**Captdriver an alternative driver for Canon laser printers**
-that only support the proprietary CAPT communications protocol
-and associated data stream formats.
+Alternative open-source CUPS filter driver for Canon CAPT laser printers.
 
-It aims to be a portable and reliable driver that can extend the
-service life of existing CAPT-only printers by extending support
-to more platforms and newer operating systems.
+## Supported Printers
 
-## Installation and Information
+| Model                   | Status       |
+|-------------------------|--------------|
+| LBP2900                 | Works        |
+| LBP3000                 | Experimental |
+| LBP3010 / LBP3018 / LBP3050 | Works   |
+| LBP3100 / LBP3108 / LBP3150 | Experimental |
+| LBP6000 / LBP6018      | Experimental |
 
-Please check the [Captdriver Wiki](https://github.com/mounaiban/captdriver/wiki)
-for a list of [supported devices](https://github.com/mounaiban/captdriver/wiki#supported-devices),
-[installation instructions](https://github.com/mounaiban/captdriver/wiki/Building-and-Installing-captdriver%3A-A-Unified-Guide),
-project status, technical information and links to more resources.
+## Building
 
-## Legal Information
+### Prerequisites
 
-Captdriver is Free Software, licensed under the [terms and conditions](https://www.gnu.org/licenses/gpl-3.0.html)
-of the [GNU General Public License, Version 3](https://choosealicense.com/licenses/gpl-3.0/)
+- C99 compiler (GCC or Clang)
+- CUPS development libraries (`libcups2-dev` / `cups-devel`)
+- GNU Autotools (`autoconf`, `automake`)
 
-This is unofficial software not endorsed or authorised by Canon Inc.
-and/or its affiliates.
+### From Source
+
+```sh
+aclocal
+autoconf
+automake --add-missing
+./configure
+make
+make ppd
+```
+
+### Install
+
+```sh
+sudo make install
+sudo cp /usr/local/bin/rastertocapt "$(cups-config --serverbin)/filter/"
+sudo lpadmin -p PRINTER_NAME -v PRINTER_URI -P PPD_FILE -E
+sudo lpadmin -d PRINTER_NAME
+```
+
+Replace `PRINTER_NAME`, `PRINTER_URI`, and `PPD_FILE` with your values.
+Generated PPD files are in the `ppd/` directory after `make ppd`.
+
+The `rastertocapt` binary must be owned by root with read-and-execute
+permissions for other users, or CUPS will refuse to run it.
+
+### Nix
+
+Build and install via the included flake:
+
+```sh
+nix build
+```
+
+On NixOS, enable the module in your configuration:
+
+```nix
+{
+  inputs.captdriver.url = "github:mounaiban/captdriver";
+
+  # In your system configuration:
+  imports = [ captdriver.nixosModules.default ];
+  services.captdriver.enable = true;
+}
+```
+
+This makes the CUPS filter and PPD files available automatically.
+
+## Protocol Documentation
+
+See [SPECS](SPECS) for the reverse-engineered Canon CAPT protocol documentation,
+including the A0-command protocol and Hi-SCoA compression algorithm.
+
+## License
+
+GPLv3 - see <https://www.gnu.org/licenses/gpl-3.0.html>
+
+This is unofficial software, not endorsed by Canon Inc.

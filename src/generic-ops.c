@@ -30,11 +30,13 @@
 
 size_t ops_compress_band_hiscoa(struct printer_state_s *state,
 		void *band, size_t size,
-		const void *pixels, unsigned line_size, unsigned num_lines)
+		const void *pixels, unsigned line_size, unsigned num_lines,
+		bool is_last_band)
 {
 	(void) state;
 	return hiscoa_compress_band(band, size, pixels, line_size, num_lines,
-					0, &hiscoa_default_params);
+			is_last_band ? HISCOA_EOB_LAST : HISCOA_EOB_NORMAL,
+			&hiscoa_default_params);
 }
 
 void ops_send_band_hiscoa(struct printer_state_s *state, const void *data, size_t size)

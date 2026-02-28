@@ -35,11 +35,6 @@ struct printer_rec {
 
 static struct printer_rec *printer_recs;
 
-static void __attribute__((constructor(101))) __init_printers(void)
-{
-	printer_recs = NULL;
-}
-
 static void __attribute__((destructor(101))) __clear_printers(void)
 {
 	while (printer_recs) {
@@ -67,11 +62,13 @@ static bool ieee_isspace(char c)
 static const struct printer_ops_s *find_ops(const char *model, size_t size)
 {
 	const struct printer_rec *r;
-	char mdl[size + 1];
+	char mdl[256];
 	if (! size) {
 		fprintf(stderr, "ERROR: CAPT: printer model name is empty\n");
 		return NULL;
 	}
+	if (size >= sizeof(mdl))
+		size = sizeof(mdl) - 1;
 	memcpy(mdl, model, size);
 	mdl[size] = '\0';
 	fprintf(stderr, "DEBUG: CAPT: detected printer '%s'\n", mdl);

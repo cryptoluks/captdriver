@@ -19,7 +19,8 @@
 
 #pragma once
 
-#define _POSIX_C_SOURCE 199309L /* try removing this if build fails */
+#define _POSIX_C_SOURCE 199309L
+#define _DEFAULT_SOURCE 1
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -29,5 +30,3 @@
 
 #define container_of(ptr, type, member) \
 	((type *) ((char *) ptr - offsetof(type, member)))
-
-#define debug true
