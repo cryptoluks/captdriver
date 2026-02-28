@@ -104,7 +104,7 @@ static unsigned find_msb(unsigned val)
 static bool try_write_longrepeat(struct state *state)
 {
 	unsigned cmd;
-	unsigned best_cmd;
+	unsigned best_cmd = 0;
 	unsigned best_len = 0;
 
 	for (cmd = 0; cmd < 6; ++cmd) {
@@ -242,12 +242,11 @@ size_t hiscoa_compress_band(void *buf, size_t size,
 
 	push_bits(&state, 0xFE, 8); /* end */
 	push_bits(&state, (unsigned) eob_type, 2);
-	//if (state.bitpos % 32)
-		push_bits(&state, 0xFFFFFFFF, 32 - (state.bitpos % 32));
+	/* Pad to 32-bit boundary */
+	push_bits(&state, 0xFFFFFFFF, 32 - (state.bitpos % 32));
 
 	return state.bitpos / 8;
 }
-
 
 size_t hiscoa_format_params(void *buf, size_t size, const struct hiscoa_params *params)
 {

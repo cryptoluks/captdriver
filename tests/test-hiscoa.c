@@ -34,11 +34,16 @@ int main(int argc, char **argv)
 			abort();
 	}
 
-	fscanf(input, "%s\n", header);
+	if (fscanf(input, "%1023s", header) != 1)
+		abort();
 	if (strcmp(header, "P4"))
 		abort();
-	fscanf(input, "%s\n", header);
-	fscanf(input, "%u %u\n", &width, &height);
+	if (fscanf(input, "%1023s", header) != 1)
+		abort();
+	if (fscanf(input, "%u %u", &width, &height) != 2)
+		abort();
+	/* consume the newline after dimensions */
+	fgetc(input);
 	fprintf(stderr, "Input image dimensions: %ux%u\n", width, height);
 
 	bsize = (width / 8) * band_size;
@@ -61,7 +66,6 @@ int main(int argc, char **argv)
 			uint8_t *tmpb = bandbuf;
 			size_t tmps;
 			size_t dcsize = bsize;
-			unsigned code;
 			size_t bl = s / (width / 8);
 			size_t bs = hiscoa_compress_band(bandbuf, 2 * bsize,
 					buf, width / 8, bl,
@@ -69,7 +73,7 @@ int main(int argc, char **argv)
 					&params);
 			memset(dcbuf, 0xAA, bsize);
 			tmps = bs;
-			code = hiscoa_decompress_band((const void **)&tmpb, &tmps,
+			hiscoa_decompress_band((const void **)&tmpb, &tmps,
 					dcbuf, &dcsize,
 					width / 8,
 					&params);
@@ -96,12 +100,9 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "FINISHED - %u errors\n", errors);
 
-	if (bandbuf)
-		free(bandbuf);
-	if (dcbuf)
-		free(dcbuf);
-	if (buf)
-		free(buf);
+	free(bandbuf);
+	free(dcbuf);
+	free(buf);
 
 	if (argc > 1)
 		fclose(input);

@@ -101,13 +101,6 @@ const struct capt_status_s *capt_get_xstatus_only(void)
 {
 	download_status(CAPT_CHKXSTATUS);
 	print_status();
-	/*
-	if (FLAG(&status, CAPT_FL_JOBSTAT_CHNG)) {
-	   capt_sendrecv(CAPT_CHKJOBSTAT, NULL, 0, NULL, 0);
-	   print_status();
-	}
-	*/
-
 	return &status;
 }
 
@@ -119,32 +112,18 @@ const struct capt_status_s *capt_get_xstatus(void)
 	return &status;
 }
 
-void capt_wait_ready(void)
+typedef const struct capt_status_s *(*status_fn)(void);
+
+static void wait_until_ready(status_fn get)
 {
 	unsigned delay = CAPT_POLL_MIN_US;
-	while (FLAG(capt_get_status(), CAPT_FL_BUSY)) {
+	while (FLAG(get(), CAPT_FL_BUSY)) {
 		usleep(delay);
 		if (delay < CAPT_POLL_MAX_US)
 			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
 	}
 }
 
-void capt_wait_xready(void)
-{
-	unsigned delay = CAPT_POLL_MIN_US;
-	while (FLAG(capt_get_xstatus(), CAPT_FL_BUSY)) {
-		usleep(delay);
-		if (delay < CAPT_POLL_MAX_US)
-			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
-	}
-}
-
-void capt_wait_xready_only(void)
-{
-	unsigned delay = CAPT_POLL_MIN_US;
-	while (FLAG(capt_get_xstatus_only(), CAPT_FL_BUSY)) {
-		usleep(delay);
-		if (delay < CAPT_POLL_MAX_US)
-			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
-	}
-}
+void capt_wait_ready(void)       { wait_until_ready(capt_get_status); }
+void capt_wait_xready(void)      { wait_until_ready(capt_get_xstatus); }
+void capt_wait_xready_only(void) { wait_until_ready(capt_get_xstatus_only); }

@@ -35,11 +35,6 @@ struct printer_rec {
 
 static struct printer_rec *printer_recs;
 
-static void __attribute__((constructor(101))) __init_printers(void)
-{
-	printer_recs = NULL;
-}
-
 static void __attribute__((destructor(101))) __clear_printers(void)
 {
 	while (printer_recs) {

@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <cups/cups.h>
 #include <cups/sidechannel.h>
@@ -51,10 +52,8 @@ static void capt_send_buf(void)
 	const uint8_t *iopos = capt_iobuf;
 	size_t iosize = capt_iosize;
 
-	if (debug) {
-		fprintf(stderr, "DEBUG: CAPT: send ");
-		capt_debug_buf("DEBUG", 128);
-	}
+	fprintf(stderr, "DEBUG: CAPT: send ");
+	capt_debug_buf("DEBUG", 128);
 
 	while (iosize) {
 		cups_sc_status_t status;
@@ -102,6 +101,8 @@ static void capt_recv_buf(size_t offset, size_t expected)
 
 const char *capt_identify(void)
 {
+	unsigned delay = 10000; /* 10ms */
+
 	while (1) {
 		cups_sc_status_t status;
 		capt_iosize = sizeof(capt_iobuf) - 1;
@@ -112,10 +113,13 @@ const char *capt_identify(void)
 			exit(1);
 		}
 		capt_iobuf[capt_iosize] = '\0';
-		fprintf(stderr, "DEBUG: CAPT: printer ID string %s\n", capt_iobuf);
-		if (capt_iosize)
-			return (const char*) capt_iobuf;
-		sleep(1);
+		if (capt_iosize) {
+			fprintf(stderr, "DEBUG: CAPT: printer ID: %s\n", capt_iobuf);
+			return (const char *) capt_iobuf;
+		}
+		usleep(delay);
+		if (delay < 500000)
+			delay = delay * 2 < 500000 ? delay * 2 : 500000;
 	}
 }
 
@@ -170,10 +174,8 @@ void capt_sendrecv(uint16_t cmd, const void *buf, size_t size, void *reply, size
 		capt_debug_buf("ERROR", capt_iosize);
 		exit(1);
 	}
-	if (debug) {
-		fprintf(stderr, "DEBUG: CAPT: recv ");
-		capt_debug_buf("DEBUG", capt_iosize);
-	}
+	fprintf(stderr, "DEBUG: CAPT: recv ");
+	capt_debug_buf("DEBUG", capt_iosize);
 	if (reply) {
 		size_t copysize = reply_size ? *reply_size : capt_iosize;
 		if (copysize > capt_iosize)

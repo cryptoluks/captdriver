@@ -1,4 +1,4 @@
-#include "word.h"
+#include "../src/word.h"
 #include "hiscoa-decompress.h"
 
 #include <stdbool.h>
@@ -31,12 +31,6 @@ static uint8_t *page_reserve(size_t size)
 			abort();
 	}
 	return page.data + page.size;
-}
-
-static void page_add(const uint8_t *buf, size_t size)
-{
-	memcpy(page_reserve(size), buf, size);
-	page.size += size;
 }
 
 static void page_output(void)
@@ -93,12 +87,6 @@ static void decode_hiscoa_band_data(const uint8_t *buf, size_t size, unsigned li
 		type, lines, lines * line_size);
 	fprintf(stderr, "  unconsumed size = %u, decompressed size = %u\n",
 		(unsigned) srcsize, (unsigned) destsize);
-}
-
-static void decode_hiscoa_band(const uint8_t *buf, size_t size)
-{
-	unsigned lines = WORD(buf[2], buf[3]);
-	decode_hiscoa_band_data(buf + 4, size - 4, lines);
 }
 
 static void decode_hiscoa_band2(const uint8_t *buf, size_t size)
@@ -206,14 +194,16 @@ int main(int argc, char **argv)
 		cmd = WORD(buf[0], buf[1]);
 		switch (cmd) {
 		case 0x8000:
-			fread(buf + pos, 1, 2, input);
+			if (fread(buf + pos, 1, 2, input) != 2)
+				goto done;
 			pos += 2;
 			len = WORD(buf[4], buf[5]);
 			len <<= 16;
 			len += WORD(buf[2], buf[3]);
 			break;
 		case 0x8200:
-			fread(buf + pos, 1, 4, input);
+			if (fread(buf + pos, 1, 4, input) != 4)
+				goto done;
 			pos += 4;
 			len = WORD(buf[6], buf[7]);
 			len <<= 16;
@@ -225,11 +215,13 @@ int main(int argc, char **argv)
 		}
 		fprintf(stderr, "CMD %04X len=%u\n", cmd, len);
 		if (fread(buf + pos, 1, len - pos, input) != len - pos) {
-			fprintf(stderr, "! unable to read %li bytes\n", len - pos);
+			fprintf(stderr, "! unable to read %u bytes\n",
+					(unsigned)(len - pos));
 			break;
 		}
 		dispatch(cmd, buf + pos, len - pos);
 	}
+done:
 
 	if (page.size)
 		page_output();

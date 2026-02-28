@@ -1,10 +1,6 @@
+# Autotools generated
 Makefile
 Makefile.in
-.libs/
-.deps/
-*.o
-*.raster
-*.bin
 aclocal.m4
 autom4te.cache/
 config.log
@@ -14,4 +10,24 @@ compile
 depcomp
 install-sh
 missing
+INSTALL
+
+# Build artifacts
+.libs/
+.deps/
+*.o
+
+# Binaries
 src/rastertocapt
+tests/captdefilter
+tests/test-hiscoa
+
+# Test/debug data
+*.raster
+*.bin
+
+# Generated PPDs
+ppd/
+
+# Nix
+result

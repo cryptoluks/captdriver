@@ -1,5 +1,5 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "hiscoa-decompress.h"
 
 #include "../src/std.h"
@@ -110,7 +110,6 @@ static inline void output_byte(struct state *state, uint8_t byte)
 static void copy_block(struct state *state, unsigned origin)
 {
 	unsigned len = state->prefix + read_long_number(state);
-	fprintf(stderr, " len=%u (prefix=%u, N=%u)\n", len, state->prefix, len-state->prefix);
 	unsigned i;
 	for (i = 0; i < len; ++i) {
 		uint8_t byte = (state->output_buf
@@ -139,98 +138,59 @@ unsigned hiscoa_decompress_band(
 		.prefix = 0,
 		.bytes = { 0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xFF,
 			   0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xFF },
-
 		.origin_3 = params->origin_3,
 		.origin_5 = params->origin_5,
 		.origin_0 = params->origin_0 + line_size,
 		.origin_2 = params->origin_2 + line_size,
 		.origin_4 = params->origin_4,
 	};
-int i;
-unsigned n;
+	unsigned n;
 	unsigned ret = (unsigned) -1;
 	bool end = false;
+
 	while (! end && state.bitpos < 8 * state.input_size) {
 		bool no_reset_prefix = false;
 		unsigned group = read_n10(&state, 8);
 		switch (group) {
 		case 0:
-			fprintf(stderr, "  LONGREP0 (LINESIZE=%u, L0=%u) ", line_size, state.origin_0);
 			copy_block(&state, state.origin_0);
 			break;
 		case 1:
 			n = read_number(&state, 4);
-		        {
-				fprintf(stderr, "  REPBYTE (%u) stash={", n);
-				for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-				fprintf(stderr, " }\n");
-			}
 			output_byte(&state, get_byte(&state, 15 - n));
-			{
-				fprintf(stderr, "               stash={");
-				for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-				fprintf(stderr, " }\n");
-			}
 			break;
 		case 2:
 			if (read_bit(&state)) {
 				n = read_number(&state, 8);
-				{
-					fprintf(stderr, "  BYTE (%.2x) stash={", n);
-					for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-					fprintf(stderr, " }\n");
-				}
 				output_byte(&state, save_byte(&state, n));
-				{
-					fprintf(stderr, "            stash={");
-					for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-					fprintf(stderr, " }\n");
-				}
 			} else {
-				fprintf(stderr, "  LONGREP2 (LINESIZE=%u, L2=%u)", line_size, state.origin_2);
 				copy_block(&state, state.origin_2);
 				swap(&state.origin_2, &state.origin_0);
 			}
 			break;
 		case 3:
-			fprintf(stderr, "  LONGREP3 (L3=%u) ", state.origin_3);
 			copy_block(&state, state.origin_3);
 			break;
 		case 4:
-			fprintf(stderr, "  LONGREP4 (L4=%u) ", state.origin_4);
 			copy_block(&state, state.origin_4);
 			break;
 		case 5:
-			fprintf(stderr, "  LONGREP5 (L5=%u) ", state.origin_5);
 			copy_block(&state, state.origin_5);
 			swap(&state.origin_5, &state.origin_3);
 			break;
 		case 6:
 			if (read_bit(&state)) {
-				{
-					fprintf(stderr, "  ZEROBYTE (8) stash={");
-					for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-					fprintf(stderr, " }\n");
-				}
 				output_byte(&state, save_byte(&state, 0));
-				{
-					fprintf(stderr, "               stash={");
-					for (i=0; i<16; i++) fprintf(stderr, " %.2x", state.bytes[i]);
-					fprintf(stderr, " }\n");
-				}
 			} else {
 				state.prefix = read_prefix(&state);
 				no_reset_prefix = true;
-				fprintf(stderr, "  PREFIX (%u)\n", state.prefix);
 			}
 			break;
 		case 7:
 			ret = read_number(&state, 2);
 			end = true;
-			fprintf(stderr, "  END (%u)\n", ret);
 			break;
 		case 8:
-			fprintf(stderr, "  NOP\n");
 			break;
 		}
 		if (! no_reset_prefix)
