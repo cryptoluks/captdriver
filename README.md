@@ -10,7 +10,7 @@ Alternative open-source CUPS filter driver for Canon CAPT laser printers.
 | LBP3000                 | Experimental |
 | LBP3010 / LBP3018 / LBP3050 | Works   |
 | LBP3100 / LBP3108 / LBP3150 | Experimental |
-| LBP6000 / LBP6018      | Experimental |
+| LBP6000 / LBP6018      | Works |
 
 ## Building
 
