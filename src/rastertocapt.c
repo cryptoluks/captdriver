@@ -241,6 +241,11 @@ static void do_print(int fd)
 	state->ipage = 0;
 
 	raster = cupsRasterOpen(fd, CUPS_RASTER_READ);
+	if (! raster) {
+		fprintf(stderr, "ERROR: CAPT: unable to open raster stream\n");
+		free_state();
+		return;
+	}
 
 	fprintf(stderr, "DEBUG: CAPT: rendering\n");
 

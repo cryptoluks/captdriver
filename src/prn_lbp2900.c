@@ -104,9 +104,16 @@ static void wait_ready(const struct printer_ops_s *ops)
 static void send_job_start(uint8_t fg, uint16_t page)
 {
 	time_t rawtime = time(NULL);
+	struct tm fallback;
 	const struct tm *tm = localtime(&rawtime);
 	uint8_t buf[72]; /* 32 header + 40 padding (no host/user/doc names) */
-	uint8_t head[32] = {
+	uint8_t head[32];
+	if (! tm) {
+		memset(&fallback, 0, sizeof(fallback));
+		tm = &fallback;
+	}
+	{
+	uint8_t h[32] = {
 		0x00, 0x00, 0x00, 0x00, LO(page), HI(page), 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		fg, 0x01, LO(job), HI(job),
@@ -117,6 +124,8 @@ static void send_job_start(uint8_t fg, uint16_t page)
 		(uint8_t) tm->tm_hour, (uint8_t) tm->tm_min, (uint8_t) tm->tm_sec,
 		0x01,
 	};
+	memcpy(head, h, sizeof(head));
+	}
 	memcpy(buf, head, sizeof(head));
 	memset(buf + 32, 0, 40);
 	capt_sendrecv(CAPT_JOB_SETUP, buf, sizeof(buf), NULL, 0);
@@ -220,7 +229,12 @@ static bool lbp2900_page_prologue(struct printer_state_s *state,
 	/* Wait for buffer space */
 	{
 		unsigned delay = CAPT_POLL_MIN_US;
+		unsigned retries = 0;
 		while (FLAG(get_status(state->ops), CAPT_FL_BUFFERFULL)) {
+			if (++retries > CAPT_POLL_MAX_RETRIES) {
+				fprintf(stderr, "WARNING: CAPT: printer buffer still full, giving up\n");
+				break;
+			}
 			usleep(delay);
 			if (delay < CAPT_POLL_MAX_US)
 				delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
@@ -244,6 +258,7 @@ static bool lbp2900_page_epilogue(struct printer_state_s *state,
 {
 	const struct capt_status_s *status;
 	unsigned delay;
+	unsigned retries = 0;
 	(void) dims;
 
 	capt_send(CAPT_PRINT_DATA_END, NULL, 0);
@@ -254,6 +269,11 @@ static bool lbp2900_page_epilogue(struct printer_state_s *state,
 		status = get_status(state->ops);
 		if (status->page_received == status->page_decoding)
 			break;
+		if (++retries > CAPT_POLL_MAX_RETRIES) {
+			fprintf(stderr, "WARNING: CAPT: page not received after %u polls\n",
+					retries);
+			break;
+		}
 		usleep(delay);
 		if (delay < CAPT_POLL_MAX_US)
 			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
@@ -293,10 +313,17 @@ static void lbp2900_job_epilogue(struct printer_state_s *state)
 {
 	uint8_t jbuf[2] = { LO(job), HI(job) };
 	unsigned delay = CAPT_POLL_MIN_US;
+	unsigned retries = 0;
 
 	while (1) {
 		const struct capt_status_s *status = get_status(state->ops);
 		if (status->page_completed == status->page_decoding) {
+			send_job_start(4, status->page_completed);
+			break;
+		}
+		if (++retries > CAPT_POLL_MAX_RETRIES) {
+			fprintf(stderr, "WARNING: CAPT: page not completed after %u polls, ending job\n",
+					retries);
 			send_job_start(4, status->page_completed);
 			break;
 		}

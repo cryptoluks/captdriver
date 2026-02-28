@@ -117,7 +117,13 @@ typedef const struct capt_status_s *(*status_fn)(void);
 static void wait_until_ready(status_fn get)
 {
 	unsigned delay = CAPT_POLL_MIN_US;
+	unsigned retries = 0;
 	while (FLAG(get(), CAPT_FL_BUSY)) {
+		if (++retries > CAPT_POLL_MAX_RETRIES) {
+			fprintf(stderr, "WARNING: CAPT: printer not ready after %u polls, giving up\n",
+					retries);
+			break;
+		}
 		usleep(delay);
 		if (delay < CAPT_POLL_MAX_US)
 			delay = delay * 2 < CAPT_POLL_MAX_US ? delay * 2 : CAPT_POLL_MAX_US;
