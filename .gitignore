@@ -22,6 +22,12 @@ INSTALL
 src/rastertocapt
 tests/captdefilter
 tests/test-hiscoa
+tests/test-word
+
+# Test harness output
+tests/*.log
+tests/*.trs
+tests/test-suite.log
 
 # Test/debug data
 *.raster
