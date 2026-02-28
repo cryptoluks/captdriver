@@ -35,7 +35,9 @@
 
             postBuild = ''
               # Generate PPD files from drv source
-              LC_ALL=C ${pkgs.cups}/bin/ppdc src/canon-lbp.drv -d ./ppd
+              LC_ALL=C ${pkgs.cups}/bin/ppdc \
+                -I ${pkgs.cups}/share/cups/ppdc \
+                src/canon-lbp.drv -d ./ppd
             '';
 
             installPhase = ''
