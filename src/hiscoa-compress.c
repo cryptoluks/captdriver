@@ -26,8 +26,6 @@
 #include <string.h>
 
 struct state {
-	const uint8_t xorval;
-
 	const uint8_t *const input_buf;
 	const size_t input_size;
 	size_t input_pos;
@@ -53,10 +51,8 @@ static void push_bits(struct state *state, uint32_t bits, unsigned count)
 		uint8_t mask = (0xFFu >> (8 - cnt)) << (spc - cnt);
 		uint32_t val = (bits >> (count - cnt)) << (spc - cnt);
 		uint8_t x = state->output_buf[word];
-		x ^= state->xorval;
 		x &= ~mask;
 		x |= mask & val;
-		x ^= state->xorval;
 		state->output_buf[word] = x;
 		state->bitpos += cnt;
 		count -= cnt;
@@ -66,18 +62,29 @@ static void push_bits(struct state *state, uint32_t bits, unsigned count)
 static unsigned try_match(const struct state *state, unsigned diff)
 {
 	unsigned pos = state->input_pos;
+	unsigned limit;
+	unsigned line_remain;
+	const uint8_t *a;
+	const uint8_t *b;
+	unsigned len = 0;
+
 	if (pos < diff)
 		return 0;
-	while (state->input_buf[pos] == state->input_buf[pos - diff]) {
-		++pos;
-		if (pos >= state->input_size)
-			break;
-		if (pos >= state->input_pos + 512 + 127)
-			break;
-		if (pos % state->line_size == 0)
-			break;
-	}
-	return pos - state->input_pos;
+
+	/* Precompute match limit: min of buffer end, max length, line end */
+	limit = state->input_size - pos;
+	if (limit > 512 + 127)
+		limit = 512 + 127;
+	line_remain = state->line_size - (pos % state->line_size);
+	if (limit > line_remain)
+		limit = line_remain;
+
+	a = state->input_buf + pos;
+	b = a - diff;
+	while (len < limit && a[len] == b[len])
+		++len;
+
+	return len;
 }
 
 static void swap(unsigned *a, unsigned *b)
@@ -210,8 +217,6 @@ size_t hiscoa_compress_band(void *buf, size_t size,
 	const struct hiscoa_params *params)
 {
 	struct state state = {
-		.xorval = 0x43,
-
 		.input_buf = (const uint8_t *) band,
 		.input_size = line_size * nlines,
 		.input_pos = 0,
@@ -231,6 +236,8 @@ size_t hiscoa_compress_band(void *buf, size_t size,
 		.origin[2] = params->origin_2 + line_size,
 		.origin[4] = params->origin_4,
 	};
+	size_t out_bytes;
+	size_t i;
 
 	while (state.input_pos < state.input_size) {
 		if (try_write_longrepeat(&state))
@@ -243,9 +250,18 @@ size_t hiscoa_compress_band(void *buf, size_t size,
 	push_bits(&state, 0xFE, 8); /* end */
 	push_bits(&state, (unsigned) eob_type, 2);
 	/* Pad to 32-bit boundary */
-	push_bits(&state, 0xFFFFFFFF, 32 - (state.bitpos % 32));
+	{
+		unsigned pad = (32 - (state.bitpos % 32)) % 32;
+		if (pad)
+			push_bits(&state, 0xFFFFFFFF, pad);
+	}
 
-	return state.bitpos / 8;
+	/* Apply XOR obfuscation in a single pass over the output */
+	out_bytes = state.bitpos / 8;
+	for (i = 0; i < out_bytes; ++i)
+		state.output_buf[i] ^= 0x43;
+
+	return out_bytes;
 }
 
 size_t hiscoa_format_params(void *buf, size_t size, const struct hiscoa_params *params)
