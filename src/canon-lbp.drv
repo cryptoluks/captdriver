@@ -219,4 +219,220 @@ Version 0.1.4
 		FileName "CanonLBP-3010-3018-3050.ppd"
 		PCFileName "CNLB3K10.ppd"
 	}
+
+	// LBP3100 / LBP3108 / LBP3150
+	{
+		Group "PrinterSettings/Printer Settings"
+		Option "captDarkness/Darkness" PickOne AnySetup 10
+		Choice 0 "<</cupsInteger1 0>>setpagedevice"
+		Choice 1 "<</cupsInteger1 1>>setpagedevice"
+		Choice 2 "<</cupsInteger1 2>>setpagedevice"
+		Choice 3 "<</cupsInteger1 3>>setpagedevice"
+		Choice 4 "<</cupsInteger1 4>>setpagedevice"
+		Choice 5 "<</cupsInteger1 5>>setpagedevice"
+		Choice 6 "<</cupsInteger1 6>>setpagedevice"
+		*Choice 7 "<</cupsInteger1 7>>setpagedevice"
+		Choice 8 "<</cupsInteger1 8>>setpagedevice"
+		Choice 9 "<</cupsInteger1 9>>setpagedevice"
+		Choice 10 "<</cupsInteger1 10>>setpagedevice"
+		Choice 11 "<</cupsInteger1 11>>setpagedevice"
+		Choice 12 "<</cupsInteger1 12>>setpagedevice"
+		Choice 13 "<</cupsInteger1 13>>setpagedevice"
+		Choice 14 "<</cupsInteger1 14>>setpagedevice"
+		Choice 15 "<</cupsInteger1 15>>setpagedevice"
+
+		*Resolution k 1 160 595 0 "600x600dpi/600 DPI"
+		Resolution k 1 160 595 0 "600x400dpi/400 DPI"
+
+		MediaType 1 "Plain/Plain Paper"
+		MediaType 4 "Heavy/Heavy Paper"
+		MediaType 8 "PlainL/Plain Paper L"
+		MediaType 5 "HeavyH/Heavy Paper H"
+		MediaType 24 "Transparency"
+		MediaType 4 "Label"
+		MediaType 20 "Envelope"
+
+		MinSize 75mm 105mm
+		MaxSize 215.9mm 355.6mm
+		HWmargins 4.7095835mm 4.7095835mm 4.709583mm 4.709583mm
+
+		VariablePaperSize yes
+		*MediaSize A4
+		MediaSize A5
+		MediaSize B5
+		MediaSize Executive
+		MediaSize Folio
+		MediaSize Legal
+		MediaSize Letter
+		MediaSize SISG5
+		MediaSize SISE5
+		MediaSize SAC16K
+		MediaSize SAC32K
+
+		MediaSize 8x10
+		MediaSize A4Small
+		MediaSize A4Plus
+		MediaSize A5Extra
+		MediaSize A6
+		MediaSize B6
+		MediaSize B7
+		MediaSize DoublePostcard
+		MediaSize FanFoldGerman
+		MediaSize FanFoldGermanLegal
+		MediaSize ISOB5
+		MediaSize ISOB5Extra
+		MediaSize ISOB6
+		MediaSize ISOB7
+		MediaSize LetterPlus
+		MediaSize Note
+		MediaSize Postcard
+		MediaSize PRC16K
+		MediaSize PRC32K
+		MediaSize PRC32KBig
+		MediaSize Quarto
+		MediaSize Statement
+
+		HWmargins 10mm 10mm 10mm 10mm
+		MediaSize 3x5
+		MediaSize Env10
+		MediaSize EnvC5
+		MediaSize EnvChou4
+		MediaSize EnvDL
+		MediaSize EnvItalian
+		MediaSize 7x9
+		MediaSize C6
+		MediaSize Env9
+		MediaSize Env11
+		MediaSize Env12
+		MediaSize Env14
+		MediaSize EnvC6
+		MediaSize EnvC65
+		MediaSize EnvChou3
+		MediaSize EnvISOB5
+		MediaSize EnvISOB6
+		MediaSize EnvKaku3
+		MediaSize EnvMonarch
+		MediaSize EnvPersonal
+		MediaSize EnvPRC1
+		MediaSize EnvPRC2
+		MediaSize EnvPRC3
+		MediaSize EnvPRC4
+		MediaSize EnvPRC5
+		MediaSize EnvPRC6
+		MediaSize EnvPRC7
+		MediaSize EnvPRC8
+		MediaSize EnvYou4
+
+		*ModelName "LBP3100/LBP3108/LBP3150 r2c"
+		FileName "CanonLBP-3100-3108-3150.ppd"
+		PCFileName "CNLB3100.ppd"
+	}
+
+	// LBP6000 / LBP6018
+	{
+		Group "PrinterSettings/Printer Settings"
+		Option "captDarkness/Darkness" PickOne AnySetup 10
+		Choice 0 "<</cupsInteger1 0>>setpagedevice"
+		Choice 1 "<</cupsInteger1 1>>setpagedevice"
+		Choice 2 "<</cupsInteger1 2>>setpagedevice"
+		Choice 3 "<</cupsInteger1 3>>setpagedevice"
+		Choice 4 "<</cupsInteger1 4>>setpagedevice"
+		Choice 5 "<</cupsInteger1 5>>setpagedevice"
+		Choice 6 "<</cupsInteger1 6>>setpagedevice"
+		*Choice 7 "<</cupsInteger1 7>>setpagedevice"
+		Choice 8 "<</cupsInteger1 8>>setpagedevice"
+		Choice 9 "<</cupsInteger1 9>>setpagedevice"
+		Choice 10 "<</cupsInteger1 10>>setpagedevice"
+		Choice 11 "<</cupsInteger1 11>>setpagedevice"
+		Choice 12 "<</cupsInteger1 12>>setpagedevice"
+		Choice 13 "<</cupsInteger1 13>>setpagedevice"
+		Choice 14 "<</cupsInteger1 14>>setpagedevice"
+		Choice 15 "<</cupsInteger1 15>>setpagedevice"
+
+		*Resolution k 1 160 595 0 "600x600dpi/600 DPI"
+		Resolution k 1 160 595 0 "600x400dpi/400 DPI"
+
+		MediaType 1 "Plain/Plain Paper"
+		MediaType 4 "Heavy/Heavy Paper"
+		MediaType 8 "PlainL/Plain Paper L"
+		MediaType 5 "HeavyH/Heavy Paper H"
+		MediaType 24 "Transparency"
+		MediaType 4 "Label"
+		MediaType 20 "Envelope"
+
+		MinSize 75mm 105mm
+		MaxSize 215.9mm 355.6mm
+		HWmargins 4.7095835mm 4.7095835mm 4.709583mm 4.709583mm
+
+		VariablePaperSize yes
+		*MediaSize A4
+		MediaSize A5
+		MediaSize B5
+		MediaSize Executive
+		MediaSize Folio
+		MediaSize Legal
+		MediaSize Letter
+		MediaSize SISG5
+		MediaSize SISE5
+		MediaSize SAC16K
+		MediaSize SAC32K
+
+		MediaSize 8x10
+		MediaSize A4Small
+		MediaSize A4Plus
+		MediaSize A5Extra
+		MediaSize A6
+		MediaSize B6
+		MediaSize B7
+		MediaSize DoublePostcard
+		MediaSize FanFoldGerman
+		MediaSize FanFoldGermanLegal
+		MediaSize ISOB5
+		MediaSize ISOB5Extra
+		MediaSize ISOB6
+		MediaSize ISOB7
+		MediaSize LetterPlus
+		MediaSize Note
+		MediaSize Postcard
+		MediaSize PRC16K
+		MediaSize PRC32K
+		MediaSize PRC32KBig
+		MediaSize Quarto
+		MediaSize Statement
+
+		HWmargins 10mm 10mm 10mm 10mm
+		MediaSize 3x5
+		MediaSize Env10
+		MediaSize EnvC5
+		MediaSize EnvChou4
+		MediaSize EnvDL
+		MediaSize EnvItalian
+		MediaSize 7x9
+		MediaSize C6
+		MediaSize Env9
+		MediaSize Env11
+		MediaSize Env12
+		MediaSize Env14
+		MediaSize EnvC6
+		MediaSize EnvC65
+		MediaSize EnvChou3
+		MediaSize EnvISOB5
+		MediaSize EnvISOB6
+		MediaSize EnvKaku3
+		MediaSize EnvMonarch
+		MediaSize EnvPersonal
+		MediaSize EnvPRC1
+		MediaSize EnvPRC2
+		MediaSize EnvPRC3
+		MediaSize EnvPRC4
+		MediaSize EnvPRC5
+		MediaSize EnvPRC6
+		MediaSize EnvPRC7
+		MediaSize EnvPRC8
+		MediaSize EnvYou4
+
+		*ModelName "LBP6000/LBP6018 r2c"
+		FileName "CanonLBP-6000-6018.ppd"
+		PCFileName "CNLB6K.ppd"
+	}
 }

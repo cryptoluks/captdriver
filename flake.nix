@@ -46,10 +46,11 @@
               # Install the CUPS filter binary
               install -Dm755 src/rastertocapt $out/lib/cups/filter/rastertocapt
 
-              # Install PPD files
+              # Install PPD files directly into model/ (no subdirectory)
+              # so CUPS cups-driverd can find them regardless of printer config
               if [ -d ppd ]; then
                 for ppd in ppd/*.ppd; do
-                  install -Dm644 "$ppd" "$out/share/cups/model/captdriver/$(basename "$ppd")"
+                  install -Dm644 "$ppd" "$out/share/cups/model/$(basename "$ppd")"
                 done
               fi
 

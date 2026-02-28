@@ -139,7 +139,7 @@ static void common_job_prologue(struct printer_state_s *state)
 {
 	const struct lbp2900_ops_s *lops = get_lops(state->ops);
 	uint8_t buf[8];
-	size_t size;
+	size_t size = sizeof(buf);
 
 	capt_sendrecv(CAPT_IDENT, NULL, 0, NULL, 0);
 	usleep(200000);
