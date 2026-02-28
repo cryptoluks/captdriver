@@ -71,7 +71,7 @@
                 include the LBP2900, LBP3000, LBP3010/3018/3050,
                 LBP3100/3108/3150, and LBP6000/6018.
               '';
-              homepage = "https://github.com/mounaiban/captdriver";
+              homepage = "https://github.com/cryptoluks/captdriver";
               license = licenses.gpl3Plus;
               platforms = platforms.linux;
               maintainers = [];
