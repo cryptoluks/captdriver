@@ -30,7 +30,7 @@
 #include <cups/sidechannel.h>
 
 static uint8_t capt_iobuf[0x10000];
-static size_t  capt_iosize;
+static size_t capt_iosize;
 
 static void capt_debug_buf(const char *level, size_t size)
 {
@@ -204,4 +204,3 @@ void capt_multi_send(void)
 	capt_iobuf[3] = HI(capt_iosize);
 	capt_send_buf();
 }
-

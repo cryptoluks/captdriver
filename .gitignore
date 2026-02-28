@@ -32,3 +32,6 @@ ppd/
 
 # Nix
 result
+
+# Editor/tool backups
+*~

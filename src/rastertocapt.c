@@ -28,9 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <cups/raster.h>
-
 
 struct band_list_s {
 	struct band_list_s *next;
@@ -117,7 +115,6 @@ static void compress_page_data(struct printer_state_s *state,
 	unsigned shiftb = 0;
 	unsigned shiftl = 0;
 	unsigned csize = header->cupsBytesPerLine;
-
 
 	if (header->cupsBytesPerLine < dims->line_size) {
 		csize = header->cupsBytesPerLine;
@@ -315,7 +312,6 @@ static void do_print(int fd)
 	cupsRasterClose(raster);
 	free_state();
 }
-
 
 int main(int argc, char *argv[])
 {

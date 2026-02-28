@@ -1,8 +1,6 @@
 /*
  * Canon CAPT LBP Printers
- * captdriver PPD Source File
- * for use with CUPS ppdc to generate PPDs
- *
+ * PPD source file for CUPS ppdc
  */
 #include <font.defs>
 #include <media.defs>
@@ -20,19 +18,18 @@ Version 0.1.4
 {
 	Font *
 
-	// Toner Save Option
 	Option "captTonerSave/Toner Save" Boolean AnySetup 10
-        *Choice False/Disabled "<</cupsInteger0 0>>setpagedevice"
-        Choice True/Enabled    "<</cupsInteger0 1>>setpagedevice"
+	*Choice False/Disabled "<</cupsInteger0 0>>setpagedevice"
+	Choice True/Enabled "<</cupsInteger0 1>>setpagedevice"
 
 	Option "captManualDuplex/Manual Duplex" Boolean AnySetup 10
-	*Choice False/Disabled	"<</cupsInteger2 0>>setpagedevice"
-	Choice True/Enabled	"<</cupsInteger2 1>>setpagedevice"
+	*Choice False/Disabled "<</cupsInteger2 0>>setpagedevice"
+	Choice True/Enabled "<</cupsInteger2 1>>setpagedevice"
 
+	// LBP2900 / LBP3000
 	{
-                *Resolution k 1 70 592 0 "600dpi/600 DPI"
+		*Resolution k 1 70 592 0 "600dpi/600 DPI"
 
-		/* LBP 2900/3000, with multi-page size and type support */
 		MediaType 0 "Plain/Plain Paper"
 		MediaType 1 "Heavy/Heavy Paper"
 		MediaType 2 "PlainL/Plain Paper L"
@@ -41,24 +38,15 @@ Version 0.1.4
 		MediaType 5 "Envelope"
 
 		MinSize 76.2mm 127.0mm
-		MaxSize 215.9mm 355.6mm		// US Legal
+		MaxSize 215.9mm 355.6mm
 		HWmargins 5mm 5mm 5mm 5mm
 
-		/*
-		 * NOTE: Some of the sizes appear to be identical to
-		 * another at least in terms of width and length. There
-		 * could be other differences, and may be useful in managing
-		 * multiple trays on printers that support them.
-		 *
-		 */
-
-		/* Common Document Sizes */
 		VariablePaperSize yes
 		*MediaSize A4
 		MediaSize A5
 		MediaSize B5
-		MediaSize Executive	// US 7.25x10.5 inch
-		MediaSize Folio	// SE Asian F4
+		MediaSize Executive
+		MediaSize Folio
 		MediaSize Legal
 		MediaSize Letter
 		MediaSize SISG5
@@ -66,16 +54,9 @@ Version 0.1.4
 		MediaSize SAC16K
 		MediaSize SAC32K
 
-		/* Less Common Document Sizes
-		 *
-		 * PROTIP: Delete this section and recompile PPD, if page size
-		 * menus in your most used apps clutter up and cannot be managed.
-		 * Any size below may be moved to the list above, before deleting
-		 * this section.
-		 */
 		MediaSize 8x10
-		MediaSize A4Small	// Same dimensions as A4
-		MediaSize A4Plus	// Longer than Folio (F4) by just one point
+		MediaSize A4Small
+		MediaSize A4Plus
 		MediaSize A5Extra
 		MediaSize A6
 		MediaSize B6
@@ -88,7 +69,7 @@ Version 0.1.4
 		MediaSize ISOB6
 		MediaSize ISOB7
 		MediaSize LetterPlus
-		MediaSize Note		// Same dimensions as Letter (US)
+		MediaSize Note
 		MediaSize Postcard
 		MediaSize PRC16K
 		MediaSize PRC32K
@@ -96,20 +77,12 @@ Version 0.1.4
 		MediaSize Quarto
 		MediaSize Statement
 
-		/* Common Envelope Sizes */
 		HWmargins 10mm 10mm 10mm 10mm
 		MediaSize Env10
 		MediaSize EnvC5
 		MediaSize EnvChou4
 		MediaSize EnvDL
 		MediaSize EnvItalian
-
-		/* Less Common Envelope Sizes */
-		/*
-		 * PROTIP: Delete this section as necessary. If any size below
-		 * is needed, move it to the list above before deleting this section.
-		 *
-		 */
 		MediaSize 7x9
 		MediaSize C6
 		MediaSize Env9
@@ -139,61 +112,48 @@ Version 0.1.4
 		PCFileName "CNLB2K9.ppd"
 	}
 
+	// LBP3010 / LBP3018 / LBP3050
 	{
-		// LBP3010, LBP3018, LBP3050
+		Group "PrinterSettings/Printer Settings"
+		Option "captDarkness/Darkness" PickOne AnySetup 10
+		Choice 0 "<</cupsInteger1 0>>setpagedevice"
+		Choice 1 "<</cupsInteger1 1>>setpagedevice"
+		Choice 2 "<</cupsInteger1 2>>setpagedevice"
+		Choice 3 "<</cupsInteger1 3>>setpagedevice"
+		Choice 4 "<</cupsInteger1 4>>setpagedevice"
+		Choice 5 "<</cupsInteger1 5>>setpagedevice"
+		Choice 6 "<</cupsInteger1 6>>setpagedevice"
+		*Choice 7 "<</cupsInteger1 7>>setpagedevice"
+		Choice 8 "<</cupsInteger1 8>>setpagedevice"
+		Choice 9 "<</cupsInteger1 9>>setpagedevice"
+		Choice 10 "<</cupsInteger1 10>>setpagedevice"
+		Choice 11 "<</cupsInteger1 11>>setpagedevice"
+		Choice 12 "<</cupsInteger1 12>>setpagedevice"
+		Choice 13 "<</cupsInteger1 13>>setpagedevice"
+		Choice 14 "<</cupsInteger1 14>>setpagedevice"
+		Choice 15 "<</cupsInteger1 15>>setpagedevice"
 
-                // Darkness
-                Group "PrinterSettings/Printer Settings"
-                Option "captDarkness/Darkness" PickOne AnySetup 10
-		Choice 0 "<</cupsInteger1    0>>setpagedevice"
-		Choice 1 "<</cupsInteger1    1>>setpagedevice"
-		Choice 2 "<</cupsInteger1    2>>setpagedevice"
-		Choice 3 "<</cupsInteger1    3>>setpagedevice"
-		Choice 4 "<</cupsInteger1    4>>setpagedevice"
-		Choice 5 "<</cupsInteger1    5>>setpagedevice"
-		Choice 6 "<</cupsInteger1    6>>setpagedevice"
-		*Choice 7 "<</cupsInteger1   7>>setpagedevice"
-		Choice 8 "<</cupsInteger1    8>>setpagedevice"
-		Choice 9 "<</cupsInteger1    9>>setpagedevice"
-		Choice 10 "<</cupsInteger1  10>>setpagedevice"
-		Choice 11 "<</cupsInteger1  11>>setpagedevice"
-		Choice 12 "<</cupsInteger1  12>>setpagedevice"
-		Choice 13 "<</cupsInteger1  13>>setpagedevice"
-		Choice 14 "<</cupsInteger1  14>>setpagedevice"
-		Choice 15 "<</cupsInteger1  15>>setpagedevice"
+		*Resolution k 1 160 595 0 "600x600dpi/600 DPI"
+		Resolution k 1 160 595 0 "600x400dpi/400 DPI"
 
-                // Resolution
-                *Resolution k 1 160 595 0 "600x600dpi/600 DPI"
-                Resolution k 1 160 595 0 "600x400dpi/400 DPI"
+		MediaType 1 "Plain/Plain Paper"
+		MediaType 4 "Heavy/Heavy Paper"
+		MediaType 8 "PlainL/Plain Paper L"
+		MediaType 5 "HeavyH/Heavy Paper H"
+		MediaType 24 "Transparency"
+		MediaType 4 "Label"
+		MediaType 20 "Envelope"
 
-		/* LBP 3010/3018/3005, with multi-page size and type support */
-		MediaType 1   "Plain/Plain Paper"
-		MediaType 4   "Heavy/Heavy Paper"
-		MediaType 8   "PlainL/Plain Paper L"
-		MediaType 5   "HeavyH/Heavy Paper H"
-		MediaType 24  "Transparency"
-                MediaType 4   "Label"
-		MediaType 20  "Envelope"
+		MinSize 75mm 105mm
+		MaxSize 215.9mm 355.6mm
+		HWmargins 4.7095835mm 4.7095835mm 4.709583mm 4.709583mm
 
-                MinSize 75mm 105mm
-		MaxSize 215.9mm 355.6mm		// US Legal
-                HWmargins 4.7095835mm 4.7095835mm 4.709583mm 4.709583mm
-
-		/*
-		 * NOTE: Some of the sizes appear to be identical to
-		 * another at least in terms of width and length. There
-		 * could be other differences, and may be useful in managing
-		 * multiple trays on printers that support them.
-		 *
-		 */
-
-		/* Common Document Sizes */
 		VariablePaperSize yes
 		*MediaSize A4
 		MediaSize A5
 		MediaSize B5
-		MediaSize Executive	// US 7.25x10.5 inch
-		MediaSize Folio	// SE Asian F4
+		MediaSize Executive
+		MediaSize Folio
 		MediaSize Legal
 		MediaSize Letter
 		MediaSize SISG5
@@ -201,16 +161,9 @@ Version 0.1.4
 		MediaSize SAC16K
 		MediaSize SAC32K
 
-		/* Less Common Document Sizes
-		 *
-		 * PROTIP: Delete this section and recompile PPD, if page size
-		 * menus in your most used apps clutter up and cannot be managed.
-		 * Any size below may be moved to the list above, before deleting
-		 * this section.
-		 */
 		MediaSize 8x10
-		MediaSize A4Small	// Same dimensions as A4
-		MediaSize A4Plus	// Longer than Folio (F4) by just one point
+		MediaSize A4Small
+		MediaSize A4Plus
 		MediaSize A5Extra
 		MediaSize A6
 		MediaSize B6
@@ -223,7 +176,7 @@ Version 0.1.4
 		MediaSize ISOB6
 		MediaSize ISOB7
 		MediaSize LetterPlus
-		MediaSize Note		// Same dimensions as Letter (US)
+		MediaSize Note
 		MediaSize Postcard
 		MediaSize PRC16K
 		MediaSize PRC32K
@@ -231,21 +184,13 @@ Version 0.1.4
 		MediaSize Quarto
 		MediaSize Statement
 
-		/* Common Envelope Sizes */
 		HWmargins 10mm 10mm 10mm 10mm
+		MediaSize 3x5
 		MediaSize Env10
 		MediaSize EnvC5
 		MediaSize EnvChou4
 		MediaSize EnvDL
 		MediaSize EnvItalian
-
-		/* Less Common Envelope Sizes */
-		/*
-		 * PROTIP: Delete this section as necessary. If any size below
-		 * is needed, move it to the list above before deleting this section.
-		 *
-		 */
-		MediaSize 3x5
 		MediaSize 7x9
 		MediaSize C6
 		MediaSize Env9
@@ -270,10 +215,8 @@ Version 0.1.4
 		MediaSize EnvPRC8
 		MediaSize EnvYou4
 
-		// PPD file name
 		*ModelName "LBP3010/LBP3018/LBP3050 r2c"
 		FileName "CanonLBP-3010-3018-3050.ppd"
 		PCFileName "CNLB3K10.ppd"
 	}
-
 }

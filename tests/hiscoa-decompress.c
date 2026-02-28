@@ -1,9 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "hiscoa-decompress.h"
 
 #include "../src/std.h"
 #include "../src/hiscoa-common.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 struct state {
 	const uint8_t xorval;

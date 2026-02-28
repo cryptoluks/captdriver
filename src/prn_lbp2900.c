@@ -242,9 +242,9 @@ static bool lbp2900_page_prologue(struct printer_state_s *state,
 static bool lbp2900_page_epilogue(struct printer_state_s *state,
 		const struct page_dims_s *dims)
 {
-	(void) dims;
 	const struct capt_status_s *status;
 	unsigned delay;
+	(void) dims;
 
 	capt_send(CAPT_PRINT_DATA_END, NULL, 0);
 

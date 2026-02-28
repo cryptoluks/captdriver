@@ -1,6 +1,6 @@
 SUBDIRS = src tests
 
-dist_doc_DATA = SPECS INSTALL.git
+dist_doc_DATA = SPECS
 EXTRA_DIST = src/canon-lbp.drv ppd
 
 ppd: src/canon-lbp.drv

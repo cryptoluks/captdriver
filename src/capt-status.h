@@ -32,8 +32,7 @@ struct capt_status_s {
 };
 
 #define _FL(s, b) ((s << 16) | (1 << b))
-enum capt_flags
-{
+enum capt_flags {
 	/* status[0] */
 	CAPT_FL_READY1       = _FL(0, 15), /* ? */
 	CAPT_FL_READY2       = _FL(0, 12), /* ? */
@@ -65,7 +64,7 @@ enum capt_flags
 
 static inline bool FLAG(const struct capt_status_s *status, enum capt_flags flag)
 {
-	return !! (status->status[flag >> 16] & (flag & 0xFFFF));
+	return !!(status->status[flag >> 16] & (flag & 0xFFFF));
 }
 
 /* Adaptive polling parameters (microseconds) */

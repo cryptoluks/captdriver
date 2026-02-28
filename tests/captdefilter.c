@@ -1,10 +1,11 @@
-#include "../src/word.h"
 #include "hiscoa-decompress.h"
 
+#include "../src/word.h"
+
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 struct page {
@@ -162,7 +163,7 @@ static void dispatch(uint16_t cmd, const uint8_t *buf, size_t size)
 
 int main(int argc, char **argv)
 {
-	static uint8_t buf[1<<20];
+	static uint8_t buf[1 << 20];
 
 	FILE *input = stdin;
 

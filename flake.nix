@@ -57,7 +57,6 @@
               # Install documentation
               install -Dm644 README.md $out/share/doc/captdriver/README.md
               install -Dm644 SPECS $out/share/doc/captdriver/SPECS
-              install -Dm644 COPYING $out/share/doc/captdriver/COPYING
 
               runHook postInstall
             '';

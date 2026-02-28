@@ -18,6 +18,7 @@
  */
 
 #include "paper.h"
+
 #include <cups/raster.h>
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +45,7 @@ static uint8_t get_paper_size_code(unsigned page_width, unsigned page_height)
 		{ 397, 567, 0xD4 },  /* PRC16K */
 	};
 	unsigned i;
-	for (i = 0; i < sizeof(sizes)/sizeof(sizes[0]); i++) {
+	for (i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
 		int dw = (int)page_width - (int)sizes[i].w;
 		int dh = (int)page_height - (int)sizes[i].h;
 		if (dw >= -3 && dw <= 3 && dh >= -3 && dh <= 3)
