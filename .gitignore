@@ -16,6 +16,7 @@ INSTALL
 .libs/
 .deps/
 *.o
+.dirstamp
 
 # Binaries
 src/rastertocapt
