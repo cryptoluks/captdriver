@@ -63,7 +63,7 @@ void page_set_dims(struct page_dims_s *dims, const struct cups_page_header2_s *h
 	dims->ink_k = header->cupsInteger[1];
 	dims->manual_duplex = header->cupsInteger[2];
 	dims->num_lines = header->cupsHeight;
-	dims->band_size = header->cupsRowCount;
+	dims->band_size = header->cupsRowCount ? header->cupsRowCount : 70;
 	dims->margin_height = header->Margins[0];
 	dims->margin_width = header->Margins[1];
 

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 static const unsigned band_size = 70;
 
@@ -59,17 +58,17 @@ int main(int argc, char **argv)
 
 	while (1) {
 		bool bad = false;
-		ssize_t s = fread(buf, 1, bsize, input);
-		if (s < 0)
-			abort();
-		if (s > 0) {
+		size_t s = fread(buf, 1, bsize, input);
+		if (s == 0)
+			break;
+		{
 			uint8_t *tmpb = bandbuf;
 			size_t tmps;
 			size_t dcsize = bsize;
 			size_t bl = s / (width / 8);
 			size_t bs = hiscoa_compress_band(bandbuf, 2 * bsize,
 					buf, width / 8, bl,
-					(s < (int)bsize) ? HISCOA_EOB_LAST : HISCOA_EOB_NORMAL,
+					(s < bsize) ? HISCOA_EOB_LAST : HISCOA_EOB_NORMAL,
 					&params);
 			memset(dcbuf, 0xAA, bsize);
 			tmps = bs;
@@ -86,7 +85,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "! band compressed INCORRECTLY\n");
 				bad = true;
 			}
-			if ((int)dcsize != s) {
+			if (dcsize != s) {
 				fprintf(stderr, "! band size incorrect: %u instead of %u\n",
 						(unsigned) dcsize, (unsigned) s);
 				bad = true;
@@ -94,7 +93,7 @@ int main(int argc, char **argv)
 			if (bad)
 				errors += 1;
 		}
-		if (s < (int)bsize)
+		if (s < bsize)
 			break;
 	}
 

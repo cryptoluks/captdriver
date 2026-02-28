@@ -56,8 +56,8 @@ static void dump(const uint8_t *buf, size_t size)
 
 static void decode_hiscoa_params(const uint8_t *buf, size_t size)
 {
-	(void) size;
-
+	if (size < 8)
+		return;
 	hiscoa_params.origin_3 = (int8_t)buf[0];
 	hiscoa_params.origin_5 = (int8_t)buf[1];
 	/* buf[2] - ??? */
@@ -92,13 +92,19 @@ static void decode_hiscoa_band_data(const uint8_t *buf, size_t size, unsigned li
 
 static void decode_hiscoa_band2(const uint8_t *buf, size_t size)
 {
-	unsigned lines = WORD(buf[2], buf[3]);
+	unsigned lines;
+	if (size < 6)
+		return;
+	lines = WORD(buf[2], buf[3]);
 	decode_hiscoa_band_data(buf + 6, size - 6, lines);
 }
 
 static void decode_hiscoa_band3(const uint8_t *buf, size_t size)
 {
-	unsigned lines = WORD(buf[2], buf[3]);
+	unsigned lines;
+	if (size < 8)
+		return;
+	lines = WORD(buf[2], buf[3]);
 	decode_hiscoa_band_data(buf + 8, size - 8, lines);
 }
 
@@ -107,9 +113,11 @@ static void dispatch(uint16_t cmd, const uint8_t *buf, size_t size)
 	switch (cmd) {
 	case 0xD0A9:
 		fprintf(stderr, "  --(multi-command)--\n");
-		while (size) {
+		while (size >= 4) {
 			uint16_t cc = WORD(buf[0], buf[1]);
 			unsigned cs = WORD(buf[2], buf[3]);
+			if (cs < 4 || cs > size)
+				break;
 			dispatch(cc, buf + 4, cs - 4);
 			buf += cs;
 			size -= cs;
@@ -118,8 +126,10 @@ static void dispatch(uint16_t cmd, const uint8_t *buf, size_t size)
 	case 0xD0A0:
 		fprintf(stderr, "  -(compression parameters)-\n");
 		dump(buf, size);
-		line_size = WORD(buf[26], buf[27]);
-		fprintf(stderr, "  decoded: L=%u bytes, %u pixels\n", line_size, line_size * 8);
+		if (size >= 28) {
+			line_size = WORD(buf[26], buf[27]);
+			fprintf(stderr, "  decoded: L=%u bytes, %u pixels\n", line_size, line_size * 8);
+		}
 		break;
 	case 0xD0A4:
 		fprintf(stderr, "  -(Hi-SCoA parameters)-\n");
@@ -215,6 +225,10 @@ int main(int argc, char **argv)
 			break;
 		}
 		fprintf(stderr, "CMD %04X len=%u\n", cmd, len);
+		if (len < pos) {
+			fprintf(stderr, "! truncated packet\n");
+			break;
+		}
 		if (fread(buf + pos, 1, len - pos, input) != len - pos) {
 			fprintf(stderr, "! unable to read %u bytes\n",
 					(unsigned)(len - pos));

@@ -57,8 +57,8 @@ static void capt_send_buf(void)
 
 	while (iosize) {
 		cups_sc_status_t status;
-		uint8_t tmpbuf[128];
-		size_t tmpsize = sizeof(tmpbuf);
+		char tmpbuf[128];
+		int tmpsize = sizeof(tmpbuf);
 		size_t sendsize = iosize;
 		if (sendsize > 4096)
 			sendsize = 4096;
@@ -69,7 +69,7 @@ static void capt_send_buf(void)
 		fflush(stdout);
 
 		status = cupsSideChannelDoRequest(CUPS_SC_CMD_DRAIN_OUTPUT,
-				(char *) tmpbuf, (int *) &tmpsize, 1.0);
+				tmpbuf, &tmpsize, 1.0);
 		if (status != CUPS_SC_STATUS_OK) {
 			if (status == CUPS_SC_STATUS_TIMEOUT) {
 				/* Overcome race conditions in usb backend */
@@ -105,9 +105,10 @@ const char *capt_identify(void)
 
 	while (1) {
 		cups_sc_status_t status;
-		capt_iosize = sizeof(capt_iobuf) - 1;
+		int idsize = sizeof(capt_iobuf) - 1;
 		status = cupsSideChannelDoRequest(CUPS_SC_CMD_GET_DEVICE_ID,
-				(char *) capt_iobuf, (int *) &capt_iosize, 60.0);
+				(char *) capt_iobuf, &idsize, 60.0);
+		capt_iosize = idsize > 0 ? idsize : 0;
 		if (status != CUPS_SC_STATUS_OK) {
 			fprintf(stderr, "ERROR: CAPT: unable to communicate with printer\n");
 			exit(1);
@@ -177,13 +178,14 @@ void capt_sendrecv(uint16_t cmd, const void *buf, size_t size, void *reply, size
 	fprintf(stderr, "DEBUG: CAPT: recv ");
 	capt_debug_buf("DEBUG", capt_iosize);
 	if (reply) {
-		size_t copysize = reply_size ? *reply_size : capt_iosize;
-		if (copysize > capt_iosize)
-			copysize = capt_iosize;
+		size_t payload = capt_iosize > 4 ? capt_iosize - 4 : 0;
+		size_t copysize = reply_size ? *reply_size : payload;
+		if (copysize > payload)
+			copysize = payload;
 		memcpy(reply, capt_iobuf + 4, copysize);
 	}
 	if (reply_size)
-		*reply_size = capt_iosize;
+		*reply_size = capt_iosize > 4 ? capt_iosize - 4 : 0;
 }
 
 void capt_multi_begin(uint16_t cmd)

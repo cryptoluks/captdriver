@@ -52,16 +52,16 @@ static void print_status(void)
 
 static void decode_status(const uint8_t *s, size_t size)
 {
+	if (size < 2)
+		return;
 	status.status[0] = WORD(s[0], s[1]);
 
-	if (size <= 2)
+	if (size < 10)
 		return;
-
 	status.status[1] = WORD(s[8], s[9]);
 
-	if (size <= 10)
+	if (size < 40)
 		return;
-
 	status.status[2] = WORD(s[10], s[11]);
 	status.status[3] = WORD(s[12], s[13]);
 
