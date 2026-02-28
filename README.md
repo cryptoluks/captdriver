@@ -58,7 +58,7 @@ On NixOS, enable the module in your configuration:
 
 ```nix
 {
-  inputs.captdriver.url = "github:mounaiban/captdriver";
+  inputs.captdriver.url = "github:cryptoluks/captdriver";
 
   # In your system configuration:
   imports = [ captdriver.nixosModules.default ];
